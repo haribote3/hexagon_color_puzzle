@@ -24,8 +24,7 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .vertex:hover:not(.disabled) {
-            transform: scale(1.1);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            transform: scale(1.1) translate(-50%, -50%); /* Keep translate for hover if originally applied */
         }
         .vertex.disabled {
             opacity: 0.5;
@@ -35,17 +34,21 @@
         }
         .hexagon-container {
             position: relative;
-            width: 250px; /* Adjust as needed */
-            height: 250px; /* Adjust as needed */
+            width: 250px; 
+            height: 250px; 
             margin: 30px auto;
         }
-        /* Positioning vertices */
-        #vertex-0 { top: 0; left: 50%; transform: translateX(-50%); }
-        #vertex-1 { top: 25%; left: 93.3%; transform: translate(-50%, -50%); }
-        #vertex-2 { top: 75%; left: 93.3%; transform: translate(-50%, -50%); }
-        #vertex-3 { top: 100%; left: 50%; transform: translate(-50%, -100%); }
-        #vertex-4 { top: 75%; left: 6.7%; transform: translate(-50%, -50%); }
-        #vertex-5 { top: 25%; left: 6.7%; transform: translate(-50%, -50%); }
+        /* Positioning vertices for "edge at bottom" layout */
+        /* All vertices use transform: translate(-50%, -50%) for centering at top/left coordinates */
+        /* Calculated for a radius that keeps vertices within the container */
+        /* R_percent approx 38% ( (ContainerRadius - VertexRadius) / ContainerRadius * 50% ) */
+        /* P1 (vertex-0) is right-most */
+        #vertex-0 { top: 50%;    left: 88%;    transform: translate(-50%, -50%); } /* Right */
+        #vertex-1 { top: 17.1%;  left: 69%;    transform: translate(-50%, -50%); } /* Top-Right */
+        #vertex-2 { top: 17.1%;  left: 31%;    transform: translate(-50%, -50%); } /* Top-Left */
+        #vertex-3 { top: 50%;    left: 12%;    transform: translate(-50%, -50%); } /* Left */
+        #vertex-4 { top: 82.9%;  left: 31%;    transform: translate(-50%, -50%); } /* Bottom-Left */
+        #vertex-5 { top: 82.9%;  left: 69%;    transform: translate(-50%, -50%); } /* Bottom-Right */
 
         /* Color classes */
         .bg-red-custom { background-color: #ef4444; color: #7f1d1d; border-color: #b91c1c; }
@@ -101,10 +104,6 @@
             </button>
         </div>
 
-        <!-- <div id="message-area" class="text-center min-h-[50px] p-3 bg-indigo-100 text-indigo-700 rounded-lg shadow">
-            初期カラーを設定してください。
-        </div> -->
-
         <div id="solution-area" class="mt-4 p-4 bg-gray-50 rounded-lg shadow max-h-60 overflow-y-auto">
             <h3 class="text-lg font-semibold text-gray-700 mb-2 text-center">解決手順:</h3>
             <div id="solution-steps" class="text-sm text-gray-600">
@@ -114,7 +113,7 @@
 
     <script>
         const NUM_VERTICES = 6;
-        const COLORS = ['red', 'blue', 'yellow']; // 0: red, 1: blue, 2: yellow
+        const COLORS = ['red', 'blue', 'yellow']; 
         const COLOR_NAMES = ['赤', '青', '黄'];
         const COLOR_CLASSES = ['bg-red-custom', 'bg-blue-custom', 'bg-yellow-custom'];
 
@@ -123,12 +122,10 @@
         let lastClickedVertex = -1;
         
         const vertexElements = Array.from(document.querySelectorAll('.vertex'));
-        // const messageAreaElement = document.getElementById('message-area'); // Removed
         const solutionStepsElement = document.getElementById('solution-steps');
         const solveButton = document.getElementById('solve-button');
         const customColorSetupElement = document.getElementById('custom-color-setup').querySelector('.grid');
 
-        // --- Initial Color Setup UI ---
         function renderCustomColorSetup() {
             customColorSetupElement.innerHTML = '';
             for (let i = 0; i < NUM_VERTICES; i++) {
@@ -169,16 +166,15 @@
 
             renderCustomColorSetup(); 
             updateBoard(); 
-            resetGameProgress(); // No message needed
+            resetGameProgress();
         }
 
-        // --- Game Logic ---
         function resetGameProgress() {
             lastClickedVertex = -1;
             solutionStepsElement.innerHTML = ''; 
             solveButton.disabled = false;
             solveButton.classList.remove('opacity-50', 'cursor-not-allowed');
-            solveButton.textContent = '自動クリア'; // Reset button text if it was "解析中..."
+            solveButton.textContent = '自動クリア';
             vertexElements.forEach(v => v.classList.remove('disabled')); 
         }
 
@@ -203,7 +199,6 @@
 
         function handleVertexClick(index) {
             if (index === lastClickedVertex) {
-                // No messageArea to display "同じ頂点を連続して選択できません。"
                 console.warn('Cannot select the same vertex consecutively.');
                 return;
             }
@@ -216,9 +211,6 @@
 
             lastClickedVertex = index;
             updateBoard();
-            
-            // No explicit win message here. User sees colors are the same.
-            // checkWin() is still used by solver.
         }
 
         function checkWin() {
@@ -236,10 +228,8 @@
             });
         });
         
-        // --- Solver Logic (BFS) ---
         async function solveGame() {
             if (checkWin()) {
-                // messageAreaElement.textContent = '既に全ての頂点の色が同じです。'; // Removed
                 solutionStepsElement.innerHTML = '<div class="text-center">既にクリア状態です。</div>';
                 return;
             }
@@ -247,7 +237,6 @@
             solveButton.disabled = true;
             solveButton.classList.add('opacity-50', 'cursor-not-allowed');
             solveButton.textContent = '解析中...';
-            // messageAreaElement.textContent = '最適な手順を探索しています...'; // Removed
             solutionStepsElement.innerHTML = '<div class="text-center">探索中...</div>';
 
             await new Promise(resolve => setTimeout(resolve, 50));
@@ -269,7 +258,6 @@
                 iterations++;
                 if (iterations > MAX_ITERATIONS) {
                     console.error("Solver exceeded max iterations.");
-                    // messageAreaElement.textContent = '解析が複雑すぎるか、解がないため中断しました。'; // Removed
                     solutionStepsElement.innerHTML = '<div class="text-center text-red-500">解を見つけられませんでした。盤面を確認してください。</div>';
                     solveButton.disabled = false;
                     solveButton.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -311,10 +299,8 @@
             solveButton.textContent = '自動クリア'; 
 
             if (solutionPath) {
-                // messageAreaElement.textContent = `解決策が見つかりました！ (${solutionPath.length}手で達成可能)`; // Removed
                 displaySolution(solutionPath);
             } else {
-                // messageAreaElement.textContent = '解決策が見つかりませんでした。'; // Removed
                 solutionStepsElement.innerHTML = '<div class="text-center text-red-500">現在の盤面からクリアする手順は見つかりませんでした。</div>';
             }
             solveButton.disabled = false; 
@@ -337,11 +323,8 @@
         
         solveButton.addEventListener('click', solveGame);
 
-        // Initial setup on page load
         renderCustomColorSetup(); 
         initGame(); 
-        // No initial message to set in a messageArea
-
     </script>
 </body>
 </html>
